@@ -25,7 +25,10 @@ class MainActivity : ComponentActivity() {
         setContent {
             WebBrowserTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-
+                    WebBrowser(
+                       viewModel = viewModel,
+                        modifier = Modifier.padding(innerPadding)
+                    )
                 }
             }
         }

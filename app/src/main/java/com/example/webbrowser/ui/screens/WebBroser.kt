@@ -22,11 +22,12 @@ import com.google.accompanist.web.*
 @SuppressLint("JavascriptInterface")
 @Composable
 fun WebBrowser(viewModel: MainViewModel, modifier: Modifier) {
-    // Observe the URL and loading state from the ViewModel
-    val url by remember { mutableStateOf(viewModel.url) }
-    val textFieldValue = viewModel.textFieldValue
-    val isLoading by remember { mutableStateOf(viewModel.isLoading) }
 
+    // Directly access the state from the ViewModel
+    val url = viewModel.url
+    val textFieldValue = viewModel.textFieldValue
+    val isLoading = viewModel.isLoading
+    val error = viewModel.error
     // State to control visibility of the Bottom Bar and TextField
     val showBottomBarAndTextField = remember { mutableStateOf(true) }
 
@@ -38,14 +39,13 @@ fun WebBrowser(viewModel: MainViewModel, modifier: Modifier) {
             override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
                 super.onPageStarted(view, url, favicon)
                 Log.d("Accompanist WebView", "Page started loading for $url")
-                viewModel.onPageLoadingStarted() // Start loading state
+                viewModel.onPageLoadingStarted()
             }
 
             override fun onPageFinished(view: WebView?, url: String?) {
                 super.onPageFinished(view, url)
                 Log.d("Accompanist WebView", "Page finished loading for $url")
-                viewModel.onPageLoadingFinished() // End loading state
-                // Inject JavaScript to detect scroll events
+                viewModel.onPageLoadingFinished()
                 view?.evaluateJavascript(
                     """
                     var lastScrollTop = 0;
@@ -79,7 +79,7 @@ fun WebBrowser(viewModel: MainViewModel, modifier: Modifier) {
     }
 
     // WebView state and navigator
-    val webViewState = rememberWebViewState(url = viewModel.url)
+    val webViewState = rememberWebViewState(url = url)
 
     Column(
         modifier = modifier.fillMaxSize()
@@ -93,7 +93,7 @@ fun WebBrowser(viewModel: MainViewModel, modifier: Modifier) {
                         .padding(top = 16.dp),
                     value = textFieldValue,
                     onValueChange = { newValue ->
-                        viewModel.updateUrl(newValue) // Ensure that the value is updated in the ViewModel
+                        viewModel.updateUrl(newValue)
                     },
                     maxLines = 1,
                     keyboardOptions = KeyboardOptions.Default.copy(
@@ -101,47 +101,41 @@ fun WebBrowser(viewModel: MainViewModel, modifier: Modifier) {
                     ),
                     keyboardActions = KeyboardActions(
                         onDone = {
-                            viewModel.goToUrl(textFieldValue) // Execute function when Enter is pressed
+                            viewModel.goToUrl(textFieldValue)
                         }
                     ),
                     colors = TextFieldDefaults.outlinedTextFieldColors(
                         focusedLabelColor = MaterialTheme.colors.onSurface,
-                        textColor = MaterialTheme.colors.onSurface, // Ensure text is readable in both modes
+                        textColor = MaterialTheme.colors.onSurface,
                         unfocusedLabelColor = MaterialTheme.colors.onSurface.copy(alpha = 0.6f),
                         placeholderColor = MaterialTheme.colors.onSurface.copy(alpha = 0.5f),
-                        backgroundColor = MaterialTheme.colors.surface // Set background color to surface color for better contrast
+                        backgroundColor = MaterialTheme.colors.surface
                     ),
                     placeholder = {
                         Text(
                             text = "Enter URL",
-                            color = MaterialTheme.colors.onSurface.copy(alpha = 0.5f) // Adjust placeholder color
+                            color = MaterialTheme.colors.onSurface.copy(alpha = 0.5f)
                         )
                     },
                     singleLine = true
                 )
 
+                // Go button
+                IconButton(
+                    modifier = Modifier.weight(1f),
+                    onClick = { viewModel.goToUrl(textFieldValue) }
+                ) {
+                    Icon(imageVector = Icons.Default.ArrowForward, contentDescription = "Go")
+                }
 
                 // Show error icon if any
-                if (webViewState.errorsForCurrentRequest.isNotEmpty()) {
+                if (error != null) {
                     Icon(
                         modifier = Modifier.weight(1f),
                         imageVector = Icons.Default.Warning,
                         contentDescription = "Error",
                         tint = Color.Red
                     )
-                }
-            }
-        }
-        val webClient = remember {
-            object : AccompanistWebViewClient() {
-                override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
-                    super.onPageStarted(view, url, favicon)
-                    Log.d("Accompanist WebView", "Page started loading for $url")
-                    // Update the text field value when the page starts loading
-                    url?.let {
-                        viewModel.goToUrl(it)
-                        viewModel.updateUrl(it)
-                    }
                 }
             }
         }
@@ -185,11 +179,6 @@ fun WebBrowser(viewModel: MainViewModel, modifier: Modifier) {
                     icon = { Icon(imageVector = Icons.Default.Refresh, contentDescription = "Refresh") },
                     selected = false,
                     onClick = { navigator.reload() }
-                )
-                BottomNavigationItem(
-                    icon = { Icon(imageVector = Icons.Default.Check, contentDescription = "Go") },
-                    selected = false,
-                    onClick = { viewModel.goToUrl(textFieldValue) }
                 )
             }
         }

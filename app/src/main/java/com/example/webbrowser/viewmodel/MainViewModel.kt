@@ -9,15 +9,37 @@ class MainViewModel : ViewModel() {
     var url by mutableStateOf("https://google.com")
     var textFieldValue by mutableStateOf(url)
     var isLoading by mutableStateOf(false)
+    var error by mutableStateOf<String?>(null)
 
     // Update URL value
     fun updateUrl(newUrl: String) {
         textFieldValue = newUrl
+        error = null // Clear any previous error
     }
 
     // Navigate to new URL
     fun goToUrl(newUrl: String) {
-        url = newUrl
+        val formattedUrl = formatUrl(newUrl)
+        if (isValidUrl(formattedUrl)) {
+            url = formattedUrl
+            error = null
+        } else {
+            error = "Invalid URL"
+        }
+    }
+
+    // Format URL to ensure it starts with https://
+    private fun formatUrl(input: String): String {
+        return when {
+            input.startsWith("http://") || input.startsWith("https://") -> input
+            input.contains(".") -> "https://$input"
+            else -> "https://www.google.com/search?q=${input.replace(" ", "+")}"
+        }
+    }
+
+    // Validate URL
+    private fun isValidUrl(url: String): Boolean {
+        return android.util.Patterns.WEB_URL.matcher(url).matches()
     }
 
     // Set loading state

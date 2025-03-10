@@ -18,6 +18,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import com.example.webbrowser.viewmodel.MainViewModel
 import com.google.accompanist.web.*
+import com.google.accompanist.web.rememberWebViewNavigator
 
 @SuppressLint("JavascriptInterface")
 @Composable
